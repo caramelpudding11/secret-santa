@@ -49,6 +49,10 @@ app.post('/register', (req, res) => {
     }
 });
 
+app.get('/whoami', (req, res) => {
+    res.type('json').send(JSON.stringify(req.session.user.username));
+})
+
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     const user = db.prepare('SELECT * FROM users WHERE username=?').get(username);
