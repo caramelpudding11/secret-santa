@@ -139,7 +139,6 @@ app.post('/delete-game', (req, res) => {
             msg: "Not Logged In"
         })
     }
-    console.info(req.body);
     const { name } = req.body;
     const row = db.prepare('SELECT * FROM games WHERE name=?').get(name);
     if (row.admin !== req.session.user.username) {
