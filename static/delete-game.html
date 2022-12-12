@@ -32,6 +32,14 @@
             option.innerText = game;
             gameSelect.appendChild(option);
         }
+
+        if (window.location.search) {
+            const params = new URLSearchParams(window.location.search);
+            if (games.includes(params.get('game'))) {
+                gameSelect.value = params.get('game');
+            }
+        }
+
         const form = document.querySelector('form');
         form.addEventListener('submit', async e => {
             e.preventDefault();
