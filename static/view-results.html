@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -7,16 +8,20 @@
     <title>View game results</title>
     <link rel="stylesheet" href="alert.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="bubbles.css">
 </head>
+
 <body>
-    <h1>View results</h1>
-    <p>View your giftee here!</p>
-    <form action="/results" method="POST">
-        <select name="name">
-            <option disabled selected>Select a game...</option>
-        </select>
-        <input type="submit" value="View">
-    </form>
+    <div class="body-wrapper">
+        <h1>View results</h1>
+        <p>View your giftee here!</p>
+        <form action="/results" method="POST">
+            <select name="name">
+                <option disabled selected>Select a game...</option>
+            </select>
+            <input type="submit" value="View">
+        </form>
+    </div>
 
     <script type="module">
         import cfa from "https://esm.sh/cf-alert@0.2.1";
@@ -50,8 +55,10 @@
             } else {
                 cfa.message(json.msg);
             }
-            
+
         });
     </script>
+    <script src="bubbles.js"></script>
 </body>
+
 </html>

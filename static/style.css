@@ -14,3 +14,31 @@
 #participants-hidden {
     display: none;
 }
+
+body {
+    background-color: #10105f;
+    color: white;
+    font-family: sans-serif;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.body-wrapper {
+    max-width: 80ch;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.5rem;
+    min-height: 100%;
+    padding-left: 2rem;
+    margin: 0;
+}
+
+.card {}
+
+a,
+a:visited,
+a:link,
+a:hover {
+    color: inherit;
+}

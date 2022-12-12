@@ -1,12 +1,13 @@
 #cf-alert {
     width: 40%;
-    background: white;
+    background: #303030;
     border-radius: 0.2rem;
     max-height: 100%;
     overflow: auto;
 }
 
-#alert-header, #alert-footer {
+#alert-header,
+#alert-footer {
     padding: 1rem;
 }
 
@@ -46,13 +47,16 @@
     border-radius: 0.2rem;
 }
 
-#alert-cancel, #alert-ok {
+#alert-cancel,
+#alert-ok {
     cursor: pointer;
     margin: 0.2rem;
 }
 
 @media not all and (hover: none) {
-    #alert-cancel:hover, #alert-ok:hover {
+
+    #alert-cancel:hover,
+    #alert-ok:hover {
         filter: brightness(1.2);
     }
 }

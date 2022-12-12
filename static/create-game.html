@@ -8,50 +8,53 @@
     <title>Create a game</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="alert.css">
+    <link rel="stylesheet" href="bubbles.css">
 </head>
 
 <body>
-    <div id="create-game">
-        <h1>Create a game</h1>
+    <div class="body-wrapper">
+        <div id="create-game">
+            <h1>Create a game</h1>
 
-        <div>
-            <h2>Add participant</h2>
-            <input type="text" id="participant" list="participant-list" placeholder="Type a name...">
-            <datalist id="participant-list">
+            <div>
+                <h2>Add participant</h2>
+                <input type="text" id="participant" list="participant-list" placeholder="Type a name...">
+                <datalist id="participant-list">
 
-            </datalist>
-            <button id="add-participant">Add</button>
-            <p>
-                Added participants:
-            </p>
-            <ul id="added-participants">
-            </ul>
+                </datalist>
+                <button id="add-participant">Add</button>
+                <p>
+                    Added participants:
+                </p>
+                <ul id="added-participants">
+                </ul>
+            </div>
+
+            <div>
+                <h2>Create exclusion</h2>
+                <p>
+                    These names will not be matched with each other.
+                </p>
+                <ul id="added-exclusions">
+                </ul>
+                <input type="text" id="first-exclusion" placeholder="Type first name..." list="exclusion-list">
+                <input type="text" id="second-exclusion" placeholder="Type second name..." list="exclusion-list">
+                <datalist id="exclusion-list">
+
+                </datalist>
+                <button id="add-exclusion">Add</button>
+            </div>
+
+            <h2>Game info</h2>
+            <form id="create-game-form" action="/create-game" method="POST">
+                <input type="text" name="name" placeholder="Game Name">
+                <input type="text" name="budget" placeholder="Game Budget">
+                <input id="participants-hidden" type="hidden" name="participants">
+                <input id="exclusions-hidden" type="hidden" name="exclusions">
+                <input type="submit" value="Create">
+            </form>
         </div>
-
-        <div>
-            <h2>Create exclusion</h2>
-            <p>
-                These names will not be matched with each other.
-            </p>
-            <ul id="added-exclusions">
-            </ul>
-            <input type="text" id="first-exclusion" placeholder="Type first name..." list="exclusion-list">
-            <input type="text" id="second-exclusion" placeholder="Type second name..." list="exclusion-list">
-            <datalist id="exclusion-list">
-
-            </datalist>
-            <button id="add-exclusion">Add</button>
-        </div>
-
-        <h2>Game info</h2>
-        <form id="create-game-form" action="/create-game" method="POST">
-            <input type="text" name="name" placeholder="Game Name">
-            <input id="participants-hidden" type="hidden" name="participants">
-            <input id="exclusions-hidden" type="hidden" name="exclusions">
-            <input type="submit" value="Create">
-        </form>
     </div>
-
     <script type="module">
         import cf from 'https://esm.sh/campfire.js@2.3.1';
         import cfa from "https://esm.sh/cf-alert@0.2.1";
@@ -66,7 +69,9 @@
         const participantsInput = document.querySelector('input[name="participants"]');
         const addedParticipants = document.getElementById('added-participants');
         const addedExclusions = document.getElementById('added-exclusions');
+        const exclusionField = document.getElementById('exclusions-hidden');
         const participants = new Set();
+        const exclusions = {};
 
         users.forEach(user => {
             cf.insert(cf.nu('option', { c: user }), { atEndOf: participantList });
@@ -87,11 +92,13 @@
             }
             participantInput.value = '';
         }
+
         createGameForm.onsubmit = async (e) => {
             e.preventDefault();
             if (participants.size < 2) {
                 return await cfa.message('You need at least 2 participants to create a game');
             }
+            exclusionField.value = JSON.stringify(exclusions);
             const formData = new FormData(createGameForm);
             const data = Object.fromEntries(formData);
             const res = await fetch(createGameForm.action, {
@@ -109,22 +116,23 @@
                 cfa.message(parsedRes.msg);
             }
         }
+
         addExclusionBtn.onclick = (e) => {
             e.preventDefault();
-            const exclusion1 = document.getElementById('first-exclusion').value;
-            const exclusion2 = document.getElementById('second-exclusion').value;
-            if (exclusion1 && exclusion2) {
-                const exclusion = `${exclusion1},${exclusion2}`;
-                cf.insert(cf.nu('li', { c: `${exclusion1} and ${exclusion2}` }), { atEndOf: addedExclusions });
-                if (!exclusionField.value) {
-                    exclusionField.value = exclusion;
-                } else {
-                    exclusionField.value += `;${exclusion}`;
-                }
+            const exclusion1 = document.getElementById('first-exclusion');
+            const exclusion2 = document.getElementById('second-exclusion');
+
+            if (exclusion1.value && exclusion2.value) {
+                (exclusions[exclusion1.value] ||= []).push(exclusion2.value);
+                (exclusions[exclusion2.value] ||= []).push(exclusion1.value);
+                cf.insert(cf.nu('li', { c: `${exclusion1.value} and ${exclusion2.value}` }), { atEndOf: addedExclusions });
             }
-            participant.value = '';
+
+            exclusion1.value = '';
+            exclusion2.value = '';
         }
     </script>
+    <script src="bubbles.js"></script>
 </body>
 
 </html>
