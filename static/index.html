@@ -8,56 +8,69 @@
     <title>Secret Santa</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="alert.css">
+    <link rel="stylesheet" href="bubbles.css">
 </head>
 
 <body>
-    <h1>Secret Santa</h1>
-    <ul id="logged-in-only">
-        <li>
-            <a href="/logout">Log out</a>
-        </li>
-        <li>
-            <a href="/delete-game.html">Delete a game</a>
-        </li>
-        <li>
-            <a href="/create-game.html">Create a game</a>
-        </li>
-        <li>
-            <a href="/view-results.html">View results</a>
-        </li>
-    </ul>
-    <div id="logged-in-only">
-        <h2>Games</h2>
-        <ul id="games">
-        </ul>
+    <div class="body-wrapper">
+        <h1>Secret Santa</h1>
+        <div id="logged-in-only">
+            <ul>
+                <li>
+                    <a href="/logout">Log out</a>
+                </li>
+                <li>
+                    <a href="/delete-game.html">Delete a game</a>
+                </li>
+                <li>
+                    <a href="/create-game.html">Create a game</a>
+                </li>
+                <li>
+                    <a href="/view-results.html">View results</a>
+                </li>
+            </ul>
+            <h2>Games</h2>
+            <ul id="games">
+            </ul>
+        </div>
+        <form id="register" action="/register" method="POST">
+            <input type="text" name="username" placeholder="Username">
+            <input type="password" name="password" placeholder="Password">
+            <input id='submitBtn' type="submit" value="Register">
+            <a id='login-link' href="#">Already have an account? Log in</a>
+        </form>
     </div>
-    <form id="register" action="/register" method="POST">
-        <input type="text" name="username" placeholder="Username">
-        <input type="password" name="password" placeholder="Password">
-        <input id='submitBtn' type="submit" value="Register">
-        <a id='login-link' href="#">Already have an account? Log in</a>
-    </form>
 
     <script type="module">
         import cfa from "https://esm.sh/cf-alert@0.2.1";
+        import cf from "https://esm.sh/campfire.js@2.3.1";
 
         const authForm = document.getElementById('register');
         const loginLink = document.getElementById('login-link');
         const onlyLoggedIn = document.getElementById('logged-in-only');
+        const wrapper = document.querySelector('.body-wrapper');
         let isAuthSignup = true;
 
         async function onLogin() {
             authForm.style.display = 'none';
             onlyLoggedIn.style.display = 'block';
             const games = await fetch('/games').then(res => res.json());
-            console.log(games);
-            const heading = document.createElement('h2');
-            heading.innerText = 'Games';
-            document.body.appendChild(heading);
+
+            if (games.length === 0) {
+                cf.insert(cf.nu('p', { c: 'No games yet! Create one by clicking "Create a game" above.' }), { atEndOf: wrapper });
+            }
             for (const game of games) {
-                const text = document.createElement('p');
-                text.innerText = JSON.stringify(game);
-                document.body.appendChild(text);
+                cf.insert(cf.nu('li', {
+                    c: `
+                    <h3>${game.name}</h3>
+                    <div><em>Created by ${game.admin}</em></div>
+                    ${game.budget ? `<div><strong>Budget</strong> ${game.budget}</div>` : ''}
+                    <ul>
+                        <li>${JSON.parse(game.participants).join('</li><li>')}</li>
+                    </ul>
+                    `,
+                    raw: true
+                }), { atEndOf: document.querySelector("#games") });
             }
         }
 
@@ -99,6 +112,7 @@
             }
         }
     </script>
+    <script src="bubbles.js"></script>
 </body>
 
 </html>

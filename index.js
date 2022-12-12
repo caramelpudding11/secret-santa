@@ -41,7 +41,7 @@ app.post('/register', (req, res) => {
     const { username, password } = req.body;
     const exist = db.prepare('SELECT * FROM users WHERE username=?').get(username);
     if (!exist) {
-        db.prepare('INSERT INTO users(username,password) VALUES (?,?,?)').run(username, bcrypt.hashSync(password));
+        db.prepare('INSERT INTO users(username,password) VALUES (?,?)').run(username, bcrypt.hashSync(password));
         res.send({ msg: 'User Registered' });
     }
     else {
@@ -77,46 +77,25 @@ app.get('/is-logged-in', (req, res) => {
 
 function createPairs(participants, exclusions) {
     const res = {};
-    const participantsCopy = [...participants];
-    const assignedGiftees = [];
-    for (let i = 0; i < participants.length; i++) {
-        const participant = participants[i];
-        const filtered = participantsCopy.filter(p => p !== participant && !(participant in exclusions && exclusions[participant].includes(p)));
-        console.log({
-            participant, filtered
-        })
-        let randomIndex = Math.floor(Math.random() * filtered.length);
-        while (assignedGiftees.includes(filtered[randomIndex])) {
-            randomIndex = Math.floor(Math.random() * filtered.length);
+
+    const allowed = Object.fromEntries(participants.map(participant =>
+        [participant, participants.filter(other => ![participant, ...(exclusions[participant] || [])].includes(other))]));
+
+    const orderedForSureResult = participants.sort((a, b) => (exclusions[a]?.length || 0) - (exclusions[b]?.length || 0));
+
+    const random = array => array[Math.floor(Math.random() * array.length)];
+    const alreadyAssigned = new Set();
+    let iterations = 0;
+    for (const participant of orderedForSureResult) {
+        let choice = random(allowed[participant]);
+        while (alreadyAssigned.has(choice)) {
+            choice = random(allowed[participant]);
+            if (iterations++ == participants.length) throw new Error("Too many exclusions.");
         }
-        res[participant] = filtered[randomIndex];
-        assignedGiftees.push(filtered[randomIndex]);
+        alreadyAssigned.add(choice);
+        res[participant] = choice;
     }
     return res;
-}
-
-function parseExclusions(exclusionString) {
-    // exclusion string is a string of the form "a,b;c,d;e,f;a,c"
-    // parse it into the following format {a:[b,c],c:[a],e:[f]}
-    const exclusions = {};
-    const exclusionList = exclusionString.split(';');
-    for (let i = 0; i < exclusionList.length; i++) {
-        const exclusion = exclusionList[i].split(',');
-        if (exclusion[0] in exclusions) {
-            exclusions[exclusion[0]].push(exclusion[1]);
-        }
-        else {
-            exclusions[exclusion[0]] = [exclusion[1]];
-        }
-        if (exclusion[1] in exclusions) {
-            exclusions[exclusion[1]].push(exclusion[0]);
-        }
-        else {
-            exclusions[exclusion[1]] = [exclusion[0]];
-        }
-    }
-    console.log(exclusions);
-    return exclusions;
 }
 
 
@@ -135,10 +114,14 @@ app.post('/create-game', (req, res) => {
     const participants_s = JSON.stringify(participantList);
     // validate participants to make sure they exist in the database
     // if not send back an error message
-
-    const pairs = JSON.stringify(createPairs(participantList, parseExclusions(exclusions)));
-    db.prepare('INSERT INTO games(participants,admin,pairs,name,budget) VALUES (?,?,?,?,?)').run(participants_s, req.session.user.username, pairs, name, budget);
-    res.send({ msg: "Ok" });
+    try {
+        const pairs = JSON.stringify(createPairs(participantList, JSON.parse(exclusions)));
+        db.prepare('INSERT INTO games(participants,admin,pairs,name,budget) VALUES (?,?,?,?,?)').run(participants_s, req.session.user.username, pairs, name, budget);
+        res.send({ msg: "Ok" });
+    }
+    catch (e) {
+        res.send({ msg: e.message });
+    }
 });
 
 app.get('/users', (req, res) => {
@@ -155,7 +138,6 @@ app.post('/delete-game', (req, res) => {
     console.info(req.body);
     const { name } = req.body;
     const row = db.prepare('SELECT * FROM games WHERE name=?').get(name);
-    console.log(name, row);
     if (row.admin !== req.session.user.username) {
         res.status(401).send({ msg: 'Only the creator of a game can delete it.' });
     }
