@@ -1,0 +1,16 @@
+#logged-in-only {
+    display: none;
+}
+
+#create-game-form {
+    max-width: 30ch;
+}
+
+#create-game-form>* {
+    margin-top: 0.4rem;
+    margin-bottom: 0.4rem;
+}
+
+#participants-hidden {
+    display: none;
+}

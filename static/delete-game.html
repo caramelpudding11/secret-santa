@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Game</title>
+    <link rel="stylesheet" href="alert.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Delete a game</h1>
+    <form action="/delete-game" method="POST">
+        <select name="name">
+            <option disabled selected>Select a game...</option>
+        </select>
+        <input type="submit" value="Delete">
+    </form>
+
+    <script type="module">
+        import cfa from "https://esm.sh/cf-alert@0.2.1";
+        const games = await fetch('/adminned-games').then(res => res.json());
+        const gameSelect = document.querySelector('select[name="name"]');
+        for (const game of games) {
+            const option = document.createElement('option');
+            option.value = game;
+            option.innerText = game;
+            gameSelect.appendChild(option);
+        }
+        const form = document.querySelector('form');
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            if (!data.name) {
+                cfa.message('Please select a game');
+                return;
+            }
+            const res = await fetch(form.action, {
+                method: form.method,
+                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(res => res.json());
+            if (res.msg === "Game Deleted") {
+                await cfa.message('Game deleted!');
+                window.location.href = '/';
+            } else {
+                cfa.message(res.msg);
+            }
+        });
+    </script>
+</body>
+</html>
