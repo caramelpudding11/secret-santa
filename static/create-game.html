@@ -69,9 +69,6 @@
         const participants = new Set();
 
         users.forEach(user => {
-            /* const option=document.createElement('option');
-            option.value=user;
-            participantList.appendChild(option); */
             cf.insert(cf.nu('option', { c: user }), { atEndOf: participantList });
         });
 
