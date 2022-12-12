@@ -49,6 +49,7 @@
         const loginLink = document.getElementById('login-link');
         const onlyLoggedIn = document.getElementById('logged-in-only');
         const wrapper = document.querySelector('.body-wrapper');
+        const gameList = document.querySelector('#games');
 
         async function onLogin() {
             authForm.style.display = 'none';
@@ -57,7 +58,7 @@
             const username = await fetch('/whoami').then(res => res.json());
 
             if (games.length === 0) {
-                cf.insert(cf.nu('p', { c: 'No games yet! Create one by clicking "Create a game" above.' }), { atEndOf: wrapper });
+                cf.insert(cf.nu('p', { c: 'No games yet! Create one by clicking "Create a game" above.' }), { atEndOf: gameList.parentElement });
             }
 
             for (const game of games) {
@@ -79,7 +80,7 @@
                         }
                     `,
                     raw: true
-                }), { atEndOf: document.querySelector("#games") });
+                }), { atEndOf: gameList });
             }
         }
 
