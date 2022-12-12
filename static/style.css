@@ -7,7 +7,7 @@
 }
 
 :root {
-    font-size: 20px;
+    font-size: 18px;
 }
 
 @font-face {
@@ -16,7 +16,7 @@
 }
 
 body {
-    background-color: #10105f;
+    background-color: #05053c;
     color: white;
     font-family: "The Girl Next Door", sans-serif;
     display: flex;
@@ -43,7 +43,7 @@ button {
 }
 
 .body-wrapper {
-    max-width: 80ch;
+    max-width: 100ch;
     width: 100%;
     background: rgba(0, 0, 0, 0.6);
     padding: 1rem;
@@ -87,14 +87,19 @@ a:hover {
     padding: 0;
 }
 
+h2 {
+    margin-top: 0.2rem;
+    margin-bottom: 0.2rem;
+}
+
 .game {
-    width: 40%;
+    width: 45%;
     list-style-type: none;
-    background-color: aliceblue;
-    color: black;
     margin: 0.4rem;
     padding: 0.5rem;
     border-radius: 0.2rem;
+    background-color: #ddd;
+    color: #05053c;
 }
 
 .game>ul::before {
