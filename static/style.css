@@ -115,11 +115,12 @@ h2 {
 
 .game>h3 {
     margin-top: 0.2rem;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0;
 }
 
 .created-by {
     font-size: 0.8rem;
+    margin-bottom: 0.4rem;
 }
 
 .game>div>ul>li {
