@@ -41,7 +41,7 @@ app.post('/register', (req, res) => {
     const { username, password } = req.body;
     const exist = db.prepare('SELECT * FROM users WHERE username=?').get(username);
     if (!exist) {
-        db.prepare('INSERT INTO users(username,password) VALUES (?,?,?)').run(username, bcrypt.hashSync(password));
+        db.prepare('INSERT INTO users(username,password) VALUES (?,?)').run(username, bcrypt.hashSync(password));
         res.send({ msg: 'User Registered' });
     }
     else {
