@@ -49,25 +49,34 @@
         const loginLink = document.getElementById('login-link');
         const onlyLoggedIn = document.getElementById('logged-in-only');
         const wrapper = document.querySelector('.body-wrapper');
-        let isAuthSignup = true;
 
         async function onLogin() {
             authForm.style.display = 'none';
             onlyLoggedIn.style.display = 'block';
             const games = await fetch('/games').then(res => res.json());
+            const username = await fetch('/whoami').then(res => res.json());
 
             if (games.length === 0) {
                 cf.insert(cf.nu('p', { c: 'No games yet! Create one by clicking "Create a game" above.' }), { atEndOf: wrapper });
             }
+
             for (const game of games) {
-                cf.insert(cf.nu('li', {
+                cf.insert(cf.nu('li.game', {
                     c: `
                     <h3>${game.name}</h3>
-                    <div><em>Created by ${game.admin}</em></div>
+                    <div class='created-by'><em>Created by ${game.admin}</em></div>
+                    <div>
+                        <strong>With</strong>
+                        <ul>
+                            <li>${JSON.parse(game.participants).join('</li><li>')}</li>
+                        </ul>
+                    </div>
                     ${game.budget ? `<div><strong>Budget</strong> ${game.budget}</div>` : ''}
-                    <ul>
-                        <li>${JSON.parse(game.participants).join('</li><li>')}</li>
-                    </ul>
+                    <a href='/view-results.html?game=${encodeURIComponent(game.name)}'>View Results</a>
+                    ${game.admin === username
+                            ? `<a href='/delete-game.html?game=${encodeURIComponent(game.name)}'>Delete</a>`
+                            : ''
+                        }
                     `,
                     raw: true
                 }), { atEndOf: document.querySelector("#games") });
@@ -84,6 +93,7 @@
                 })
         });
 
+        let isAuthSignup = true;
         loginLink.onclick = (e) => {
             e.preventDefault();
             isAuthSignup = !isAuthSignup;
