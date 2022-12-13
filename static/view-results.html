@@ -25,12 +25,13 @@
 
     <script type="module">
         import cfa from "https://esm.sh/cf-alert@0.2.1";
+        import cf from "https://esm.sh/campfire.js@2.3.1"
         const games = await fetch('/games').then(res => res.json());
         const gameSelect = document.querySelector('select[name="name"]');
         for (const game of games) {
-            cf.insert('option', {
-                c: game
-            }, { atEndOf: gameSelect })
+            cf.insert(cf.nu('option', {
+                c: game.name,
+            }), { atEndOf: gameSelect });
         }
 
         if (window.location.search) {

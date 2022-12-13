@@ -28,9 +28,9 @@
         const games = await fetch('/adminned-games').then(res => res.json());
         const gameSelect = document.querySelector('select[name="name"]');
         for (const game of games) {
-            cf.insert('option', {
+            cf.insert(cf.nu('option', {
                 c: game
-            }, { atEndOf: gameSelect })
+            }), { atEndOf: gameSelect });
         }
 
         if (window.location.search) {
