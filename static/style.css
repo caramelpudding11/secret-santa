@@ -143,6 +143,29 @@ h2 {
     content: ',';
 }
 
+#exclusion-wrapper {
+    margin-bottom: 1rem;
+}
+
+#participant-list {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#participant-list::before {
+    content: "Users on the server:";
+    position: relative;
+    top: 0.15rem;
+}
+
+#participant-list>option {
+    margin-left: 0.4rem;
+}
+
+#participant-list>option:not(:last-child)::after {
+    content: ', '
+}
+
 * {
     scrollbar-color: gray transparent;
     scrollbar-width: thin;
