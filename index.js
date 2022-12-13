@@ -47,6 +47,7 @@ app.post('/register', (req, res) => {
     if (!exists) {
         if (req.body.nicetry) return res.send({ msg: "Unknown error" });
         if (captchas[captchaId] !== captchaValue) return res.send({ msg: "Invalid captcha" });
+        delete captchas[captchaId];
         db.prepare('INSERT INTO users(username,password) VALUES (?,?)').run(username, bcrypt.hashSync(password));
         res.send({ msg: 'User Registered' });
     }
