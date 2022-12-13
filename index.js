@@ -98,27 +98,54 @@ app.get('/is-logged-in', (req, res) => {
     res.send(!!req.session.user);
 });
 
-function createPairs(participants, exclusions) {
-    const res = {};
-
-    const allowed = Object.fromEntries(participants.map(participant =>
-        [participant, participants.filter(other => ![participant, ...(exclusions[participant] || [])].includes(other))]));
-
-    const orderedForSureResult = participants.sort((a, b) => (exclusions[a]?.length || 0) - (exclusions[b]?.length || 0));
-
-    const random = array => array[Math.floor(Math.random() * array.length)];
-    const alreadyAssigned = new Set();
-    let iterations = 0;
-    for (const participant of orderedForSureResult) {
-        let choice = random(allowed[participant]);
-        while (alreadyAssigned.has(choice)) {
-            choice = random(allowed[participant]);
-            if (iterations++ == participants.length) throw new Error("Too many exclusions.");
-        }
-        alreadyAssigned.add(choice);
-        res[participant] = choice;
+function* priorityIterator(array, cmp) {
+    let i = 0;
+    const yielded = new Set();
+    while (i++ < array.length) {
+        const next = array.filter(a => !yielded.has(a)).reduce((a, b) => (cmp(a, b) < 0 ? a : b));
+        yielded.add(next);
+        yield next;
     }
-    return res;
+}
+
+function createPairs(participants, exclusions, { disallowDuplexPairing = false } = {}) {
+    const _exclusions = { ...exclusions };
+    for (const participant of participants) {
+        if (!_exclusions[participant]) {
+            _exclusions[participant] = [];
+        }
+    }
+    const allowedPairings = Object.fromEntries(
+        participants.map(participant => [
+            participant,
+            participants
+                .filter(p => p !== participant)
+                .filter(p => !_exclusions[participant].includes(p)),
+        ])
+    );
+
+    const pairings = {};
+    const randomChoice = arr => arr[Math.floor(Math.random() * arr.length)];
+    const generator = priorityIterator(
+        participants,
+        (a, b) => allowedPairings[a].length - allowedPairings[b].length
+    );
+
+    for (const gifter of generator) {
+        const giftee = randomChoice(allowedPairings[gifter]);
+        if (!giftee) {
+            return false;
+        }
+        pairings[gifter] = giftee;
+        for (const participant of participants) {
+            allowedPairings[participant] = allowedPairings[participant].filter(p => p !== giftee);
+        }
+        if (disallowDuplexPairing) {
+            allowedPairings[giftee] = allowedPairings[giftee].filter(p => p !== gifter);
+        }
+    }
+
+    return pairings;
 }
 
 
@@ -137,9 +164,11 @@ app.post('/create-game', (req, res) => {
     const participants_s = JSON.stringify(participantList);
     // validate participants to make sure they exist in the database
     // if not send back an error message
+    let pairs = null;
+    while (!(pairs = createPairs(participantList, JSON.parse(exclusions), { disallowDuplexPairing: true })));
     try {
-        const pairs = JSON.stringify(createPairs(participantList, JSON.parse(exclusions)));
-        db.prepare('INSERT INTO games(participants,admin,pairs,name,budget) VALUES (?,?,?,?,?)').run(participants_s, req.session.user.username, pairs, name, budget);
+        const pairString = JSON.stringify(pairs);
+        db.prepare('INSERT INTO games(participants,admin,pairs,name,budget) VALUES (?,?,?,?,?)').run(participants_s, req.session.user.username, pairString, name, budget);
         res.send({ msg: "Ok" });
     }
     catch (e) {
