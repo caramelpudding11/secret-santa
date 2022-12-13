@@ -15,6 +15,10 @@
     src: url("TheGirlNextDoor-Regular.ttf");
 }
 
+#nicetry {
+    display: none;
+}
+
 body {
     background-color: #05053c;
     color: white;

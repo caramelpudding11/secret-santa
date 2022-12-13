@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const sqlite = require("better-sqlite3");
 const session = require("express-session");
 const serveStatic = require('serve-static');
+const captcha = require('trek-captcha');
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -37,10 +38,12 @@ const db = sqlite('secret-santa.db');
 
 db.exec('CREATE TABLE IF NOT EXISTS users (username TEXT unique, password TEXT)');
 db.exec('CREATE TABLE IF NOT EXISTS games (participants TEXT, admin TEXT, pairs TEXT, name TEXT unique, budget INTEGER)');
+
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
-    const exist = db.prepare('SELECT * FROM users WHERE username=?').get(username);
-    if (!exist) {
+    const exists = db.prepare('SELECT * FROM users WHERE username=?').get(username);
+    if (!exists) {
+        if (req.body.nicetry) return res.send({ msg: "Unknown error" });
         db.prepare('INSERT INTO users(username,password) VALUES (?,?)').run(username, bcrypt.hashSync(password));
         res.send({ msg: 'User Registered' });
     }
@@ -51,6 +54,11 @@ app.post('/register', (req, res) => {
 
 app.get('/whoami', (req, res) => {
     res.type('json').send(JSON.stringify(req.session.user.username));
+})
+
+app.get('/captcha', async (req, res) => {
+    const uuid = crypto.randomUUID();
+    const { token, buffer } = await captcha();
 })
 
 app.post('/login', (req, res) => {

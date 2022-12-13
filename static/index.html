@@ -37,6 +37,7 @@
             <input type="text" name="username" placeholder="Username">
             <input type="password" name="password" placeholder="Password">
             <input id='submitBtn' type="submit" value="Register">
+            <input id="nicetry" name="nicetry" type="text">
             <a id='login-link' href="#">Already have an account? Log in</a>
         </form>
     </div>
@@ -114,6 +115,9 @@
                 },
                 body: JSON.stringify(data)
             });
+            const [username, password, ..._] = authForm.querySelectorAll('input');
+            username.value = '';
+            password.value = '';
             const parsedRes = await res.json();
             if (parsedRes.msg === "Logged In") {
                 await onLogin();
