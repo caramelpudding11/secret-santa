@@ -24,13 +24,13 @@
 
     <script type="module">
         import cfa from "https://esm.sh/cf-alert@0.2.1";
+        import cf from "https://esm.sh/campfire.js@2.3.1";
         const games = await fetch('/adminned-games').then(res => res.json());
         const gameSelect = document.querySelector('select[name="name"]');
         for (const game of games) {
-            const option = document.createElement('option');
-            option.value = game;
-            option.innerText = game;
-            gameSelect.appendChild(option);
+            cf.insert('option', {
+                c: game
+            }, { atEndOf: gameSelect })
         }
 
         if (window.location.search) {

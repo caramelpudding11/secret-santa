@@ -28,10 +28,9 @@
         const games = await fetch('/games').then(res => res.json());
         const gameSelect = document.querySelector('select[name="name"]');
         for (const game of games) {
-            const option = document.createElement('option');
-            option.value = game.name;
-            option.innerText = game.name;
-            gameSelect.appendChild(option);
+            cf.insert('option', {
+                c: game
+            }, { atEndOf: gameSelect })
         }
 
         if (window.location.search) {
