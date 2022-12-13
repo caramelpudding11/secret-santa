@@ -6,6 +6,7 @@ const sqlite = require("better-sqlite3");
 const session = require("express-session");
 const serveStatic = require('serve-static');
 const captcha = require('trek-captcha');
+const { v4 } = require('uuid');
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -15,6 +16,7 @@ app.use(cors());
 const port = process.env.PORT || 4000;
 const SqliteStore = require("better-sqlite3-session-store")(session)
 const sess_db = new sqlite("sessions.db");
+const captchas = {}
 
 app.use(
     session({
@@ -40,10 +42,12 @@ db.exec('CREATE TABLE IF NOT EXISTS users (username TEXT unique, password TEXT)'
 db.exec('CREATE TABLE IF NOT EXISTS games (participants TEXT, admin TEXT, pairs TEXT, name TEXT unique, budget INTEGER)');
 
 app.post('/register', (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, captchaId, captchaValue } = req.body;
     const exists = db.prepare('SELECT * FROM users WHERE username=?').get(username);
     if (!exists) {
         if (req.body.nicetry) return res.send({ msg: "Unknown error" });
+        console.log(captchas[captchaId], captchaValue);
+        if (captchas[captchaId] !== captchaValue) return res.send({ msg: "Invalid captcha" });
         db.prepare('INSERT INTO users(username,password) VALUES (?,?)').run(username, bcrypt.hashSync(password));
         res.send({ msg: 'User Registered' });
     }
@@ -57,8 +61,13 @@ app.get('/whoami', (req, res) => {
 })
 
 app.get('/captcha', async (req, res) => {
-    const uuid = crypto.randomUUID();
+    const uuid = v4();
     const { token, buffer } = await captcha();
+    captchas[uuid] = token;
+    res.send({
+        buf: buffer.toString('base64'),
+        uuid
+    })
 })
 
 app.post('/login', (req, res) => {
