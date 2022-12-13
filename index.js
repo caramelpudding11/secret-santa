@@ -46,7 +46,6 @@ app.post('/register', (req, res) => {
     const exists = db.prepare('SELECT * FROM users WHERE username=?').get(username);
     if (!exists) {
         if (req.body.nicetry) return res.send({ msg: "Unknown error" });
-        console.log(captchas[captchaId], captchaValue);
         if (captchas[captchaId] !== captchaValue) return res.send({ msg: "Invalid captcha" });
         db.prepare('INSERT INTO users(username,password) VALUES (?,?)').run(username, bcrypt.hashSync(password));
         res.send({ msg: 'User Registered' });
