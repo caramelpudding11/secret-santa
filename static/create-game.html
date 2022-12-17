@@ -16,7 +16,7 @@
         <div id="create-game">
             <h1>Create a game</h1>
 
-            <div>
+            <div id="participant-wrapper">
                 <h2>Add participant</h2>
                 <input type="text" id="participant" list="participant-list" placeholder="Type a name...">
                 <datalist id="participant-list">
@@ -30,7 +30,7 @@
                 </ul>
             </div>
 
-            <div>
+            <div id="exclusion-wrapper">
                 <h2>Create exclusion</h2>
                 <p>
                     These names will not be matched with each other.
@@ -77,8 +77,13 @@
             cf.insert(cf.nu('option', { c: user }), { atEndOf: participantList });
         });
 
-        addParticipantBtn.onclick = (e) => {
-            e.preventDefault();
+        participantInput.onkeydown = (e) => {
+            if (e.key === 'Enter' || e.key === 'Return') {
+                addParticipant();
+            }
+        }
+
+        const addParticipant = () => {
             const participant = participantInput.value;
             if (participant && !participants.has(participant)) {
                 if (!users.includes(participant)) {
@@ -91,6 +96,11 @@
                 cf.insert(cf.nu('option', { c: participant }), { atEndOf: exclusionList });
             }
             participantInput.value = '';
+        }
+
+        addParticipantBtn.onclick = (e) => {
+            e.preventDefault();
+            addParticipant();
         }
 
         createGameForm.onsubmit = async (e) => {

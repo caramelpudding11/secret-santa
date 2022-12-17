@@ -34,8 +34,15 @@
             </ul>
         </div>
         <form id="register" action="/register" method="POST">
-            <input type="text" name="username" placeholder="Username">
-            <input type="password" name="password" placeholder="Password">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <input id="nicetry" name="nicetry" type="text">
+            <div id='captcha-wrapper'>
+                <label for=captcha-img>Enter this value into the field below</label>
+                <img id=captcha-img src="loading.png" alt="captcha">
+            </div>
+            <input type="hidden" id='captcha-id' name="captchaId">
+            <input type="text" id="captcha-value" name="captchaValue" placeholder="CAPTCHA">
             <input id='submitBtn' type="submit" value="Register">
             <a id='login-link' href="#">Already have an account? Log in</a>
         </form>
@@ -49,28 +56,47 @@
         const loginLink = document.getElementById('login-link');
         const onlyLoggedIn = document.getElementById('logged-in-only');
         const wrapper = document.querySelector('.body-wrapper');
-        let isAuthSignup = true;
+        const gameList = document.querySelector('#games');
+        const captchaWrapper = document.querySelector("#captcha-wrapper");
+        const captchaImg = authForm.querySelector('#captcha-img');
+        const captchaId = authForm.querySelector('#captcha-id');
+        const captchaField = authForm.querySelector('#captcha-value');
+
+        await fetch('/captcha').then(res => res.json()).then(json => {
+            captchaImg.src = `data:image/png;base64,${json.buf}`;
+            captchaId.value = json.uuid;
+        });
 
         async function onLogin() {
             authForm.style.display = 'none';
             onlyLoggedIn.style.display = 'block';
             const games = await fetch('/games').then(res => res.json());
+            const username = await fetch('/whoami').then(res => res.json());
 
             if (games.length === 0) {
-                cf.insert(cf.nu('p', { c: 'No games yet! Create one by clicking "Create a game" above.' }), { atEndOf: wrapper });
+                cf.insert(cf.nu('p', { c: 'No games yet! Create one by clicking "Create a game" above.' }), { atEndOf: gameList.parentElement });
             }
+
             for (const game of games) {
-                cf.insert(cf.nu('li', {
+                cf.insert(cf.nu('li.game', {
                     c: `
                     <h3>${game.name}</h3>
-                    <div><em>Created by ${game.admin}</em></div>
+                    <div class='created-by'><em>Created by ${game.admin}</em></div>
+                    <div>
+                        <strong>With</strong>
+                        <ul>
+                            <li>${JSON.parse(game.participants).join('</li><li>')}</li>
+                        </ul>
+                    </div>
                     ${game.budget ? `<div><strong>Budget</strong> ${game.budget}</div>` : ''}
-                    <ul>
-                        <li>${JSON.parse(game.participants).join('</li><li>')}</li>
-                    </ul>
+                    <a href='/view-results.html?game=${encodeURIComponent(game.name)}'>View Results</a>
+                    ${game.admin === username
+                            ? `<a href='/delete-game.html?game=${encodeURIComponent(game.name)}'>Delete</a>`
+                            : ''
+                        }
                     `,
                     raw: true
-                }), { atEndOf: document.querySelector("#games") });
+                }), { atEndOf: gameList });
             }
         }
 
@@ -84,12 +110,28 @@
                 })
         });
 
+        let isAuthSignup = true;
+        const toggleAuthForm = () => {
+            const submit = authForm.querySelector('#submitBtn');
+            isAuthSignup = !isAuthSignup;
+            if (isAuthSignup) {
+                authForm.action = '/register';
+                submit.value = 'Register';
+                captchaWrapper.style.display = 'flex';
+                captchaField.style.display = 'block';
+            }
+            else {
+                authForm.action = '/login';
+                submit.value = 'Login';
+                captchaWrapper.style.display = 'none';
+                captchaField.style.display = 'none';
+            }
+            loginLink.innerHTML = isAuthSignup ? 'Already have an account? Log in' : 'Create an account...';
+        }
+
         loginLink.onclick = (e) => {
             e.preventDefault();
-            isAuthSignup = !isAuthSignup;
-            authForm.action = isAuthSignup ? '/register' : '/login';
-            authForm.querySelector('#submitBtn').value = isAuthSignup ? 'Register' : 'Login';
-            loginLink.innerHTML = isAuthSignup ? 'Already have an account? Log in' : 'Create an account...';
+            toggleAuthForm();
         }
 
         authForm.onsubmit = async (e) => {
@@ -103,12 +145,19 @@
                 },
                 body: JSON.stringify(data)
             });
+            const [username, password, ..._] = authForm.querySelectorAll('input');
+            username.value = '';
+            password.value = '';
             const parsedRes = await res.json();
+
             if (parsedRes.msg === "Logged In") {
                 await onLogin();
             }
             else {
-                cfa.message(parsedRes.msg);
+                await cfa.message(parsedRes.msg);
+            }
+            if (parsedRes.msg === 'User Registered') {
+                toggleAuthForm();
             }
         }
     </script>

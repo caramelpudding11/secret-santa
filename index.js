@@ -5,6 +5,8 @@ const bcrypt = require("bcryptjs");
 const sqlite = require("better-sqlite3");
 const session = require("express-session");
 const serveStatic = require('serve-static');
+const captcha = require('trek-captcha');
+const { v4 } = require('uuid');
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -14,6 +16,7 @@ app.use(cors());
 const port = process.env.PORT || 4000;
 const SqliteStore = require("better-sqlite3-session-store")(session)
 const sess_db = new sqlite("sessions.db");
+const captchas = {}
 
 app.use(
     session({
@@ -37,10 +40,16 @@ const db = sqlite('secret-santa.db');
 
 db.exec('CREATE TABLE IF NOT EXISTS users (username TEXT unique, password TEXT)');
 db.exec('CREATE TABLE IF NOT EXISTS games (participants TEXT, admin TEXT, pairs TEXT, name TEXT unique, budget INTEGER)');
+
 app.post('/register', (req, res) => {
-    const { username, password } = req.body;
-    const exist = db.prepare('SELECT * FROM users WHERE username=?').get(username);
-    if (!exist) {
+    const { username, password, captchaId, captchaValue } = req.body;
+    const exists = db.prepare('SELECT * FROM users WHERE username=?').get(username);
+    if (!exists) {
+        if (req.body.nicetry) return res.send({ msg: "Unknown error" });
+        if (captchas[captchaId] !== captchaValue) {
+            return res.send({ msg: "Invalid or expired captcha. Refresh the page if this persists." });
+        }
+        delete captchas[captchaId];
         db.prepare('INSERT INTO users(username,password) VALUES (?,?)').run(username, bcrypt.hashSync(password));
         res.send({ msg: 'User Registered' });
     }
@@ -48,6 +57,20 @@ app.post('/register', (req, res) => {
         res.send({ msg: 'User Already Exists' });
     }
 });
+
+app.get('/whoami', (req, res) => {
+    res.type('json').send(JSON.stringify(req.session.user.username));
+})
+
+app.get('/captcha', async (req, res) => {
+    const uuid = v4();
+    const { token, buffer } = await captcha();
+    captchas[uuid] = token;
+    res.send({
+        buf: buffer.toString('base64'),
+        uuid
+    })
+})
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
@@ -75,27 +98,54 @@ app.get('/is-logged-in', (req, res) => {
     res.send(!!req.session.user);
 });
 
-function createPairs(participants, exclusions) {
-    const res = {};
-
-    const allowed = Object.fromEntries(participants.map(participant =>
-        [participant, participants.filter(other => ![participant, ...(exclusions[participant] || [])].includes(other))]));
-
-    const orderedForSureResult = participants.sort((a, b) => (exclusions[a]?.length || 0) - (exclusions[b]?.length || 0));
-
-    const random = array => array[Math.floor(Math.random() * array.length)];
-    const alreadyAssigned = new Set();
-    let iterations = 0;
-    for (const participant of orderedForSureResult) {
-        let choice = random(allowed[participant]);
-        while (alreadyAssigned.has(choice)) {
-            choice = random(allowed[participant]);
-            if (iterations++ == participants.length) throw new Error("Too many exclusions.");
-        }
-        alreadyAssigned.add(choice);
-        res[participant] = choice;
+function* priorityIterator(array, cmp) {
+    let i = 0;
+    const yielded = new Set();
+    while (i++ < array.length) {
+        const next = array.filter(a => !yielded.has(a)).reduce((a, b) => (cmp(a, b) < 0 ? a : b));
+        yielded.add(next);
+        yield next;
     }
-    return res;
+}
+
+function createPairs(participants, exclusions, { disallowDuplexPairing = false } = {}) {
+    const _exclusions = { ...exclusions };
+    for (const participant of participants) {
+        if (!_exclusions[participant]) {
+            _exclusions[participant] = [];
+        }
+    }
+    const allowedPairings = Object.fromEntries(
+        participants.map(participant => [
+            participant,
+            participants
+                .filter(p => p !== participant)
+                .filter(p => !_exclusions[participant].includes(p)),
+        ])
+    );
+
+    const pairings = {};
+    const randomChoice = arr => arr[Math.floor(Math.random() * arr.length)];
+    const generator = priorityIterator(
+        participants,
+        (a, b) => allowedPairings[a].length - allowedPairings[b].length
+    );
+
+    for (const gifter of generator) {
+        const giftee = randomChoice(allowedPairings[gifter]);
+        if (!giftee) {
+            return false;
+        }
+        pairings[gifter] = giftee;
+        for (const participant of participants) {
+            allowedPairings[participant] = allowedPairings[participant].filter(p => p !== giftee);
+        }
+        if (disallowDuplexPairing) {
+            allowedPairings[giftee] = allowedPairings[giftee].filter(p => p !== gifter);
+        }
+    }
+
+    return pairings;
 }
 
 
@@ -114,9 +164,11 @@ app.post('/create-game', (req, res) => {
     const participants_s = JSON.stringify(participantList);
     // validate participants to make sure they exist in the database
     // if not send back an error message
+    let pairs = null;
+    while (!(pairs = createPairs(participantList, JSON.parse(exclusions), { disallowDuplexPairing: true })));
     try {
-        const pairs = JSON.stringify(createPairs(participantList, JSON.parse(exclusions)));
-        db.prepare('INSERT INTO games(participants,admin,pairs,name,budget) VALUES (?,?,?,?,?)').run(participants_s, req.session.user.username, pairs, name, budget);
+        const pairString = JSON.stringify(pairs);
+        db.prepare('INSERT INTO games(participants,admin,pairs,name,budget) VALUES (?,?,?,?,?)').run(participants_s, req.session.user.username, pairString, name, budget);
         res.send({ msg: "Ok" });
     }
     catch (e) {
@@ -135,7 +187,6 @@ app.post('/delete-game', (req, res) => {
             msg: "Not Logged In"
         })
     }
-    console.info(req.body);
     const { name } = req.body;
     const row = db.prepare('SELECT * FROM games WHERE name=?').get(name);
     if (row.admin !== req.session.user.username) {

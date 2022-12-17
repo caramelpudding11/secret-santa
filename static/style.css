@@ -2,43 +2,185 @@
     display: none;
 }
 
-#create-game-form {
-    max-width: 30ch;
-}
-
-#create-game-form>* {
-    margin-top: 0.4rem;
-    margin-bottom: 0.4rem;
-}
-
 #participants-hidden {
     display: none;
 }
 
-body {
-    background-color: #10105f;
-    color: white;
-    font-family: sans-serif;
+:root {
+    font-size: 18px;
+}
+
+@font-face {
+    font-family: "The Girl Next Door";
+    src: url("TheGirlNextDoor-Regular.ttf");
+}
+
+#nicetry {
+    display: none;
+}
+
+#captcha-wrapper {
     display: flex;
     align-items: center;
     flex-direction: column;
 }
 
-.body-wrapper {
-    max-width: 80ch;
-    width: 100%;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 0.5rem;
-    min-height: 100%;
-    padding-left: 2rem;
-    margin: 0;
+body {
+    background-color: #05053c;
+    color: white;
+    font-family: "The Girl Next Door", sans-serif;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
 }
 
-.card {}
+input,
+select,
+button {
+    font-family: inherit;
+    background-color: #303030;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    font-size: 1rem;
+    min-width: 10ch;
+}
+
+input[type=submit],
+select,
+button {
+    cursor: pointer;
+}
+
+.body-wrapper {
+    max-width: 100ch;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 1rem;
+    height: 100%;
+    margin: 0;
+    overflow-y: scroll;
+}
+
+body,
+html {
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+}
+
+form>* {
+    margin: 0.4rem;
+    max-width: 40ch;
+    font-size: 1rem;
+}
 
 a,
 a:visited,
 a:link,
 a:hover {
     color: inherit;
+}
+
+#games {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+}
+
+h2 {
+    margin-top: 0.2rem;
+    margin-bottom: 0.2rem;
+}
+
+.game {
+    width: 45ch;
+    list-style-type: none;
+    margin: 0.4rem;
+    padding: 0.5rem;
+    border-radius: 0.2rem;
+    background-color: #ddd;
+    color: #05053c;
+}
+
+.game>ul::before {
+    content: "Participants";
+    font-weight: bold;
+}
+
+.game>div>ul {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0;
+}
+
+.game>h3 {
+    margin-top: 0.2rem;
+    margin-bottom: 0;
+}
+
+.created-by {
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
+}
+
+.game>div>ul>li {
+    margin: 0.2rem;
+    list-style-type: none;
+    height: 2rem;
+}
+
+.game>div>ul>li:not(:last-child)::after {
+    content: ',';
+}
+
+#exclusion-wrapper {
+    margin-bottom: 1rem;
+}
+
+#participant-list {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#participant-list::before {
+    content: "Users on the server:";
+    position: relative;
+    top: 0.15rem;
+}
+
+#participant-list>option {
+    margin-left: 0.4rem;
+}
+
+#participant-list>option:not(:last-child)::after {
+    content: ', '
+}
+
+* {
+    scrollbar-color: gray transparent;
+    scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background-color: gray;
 }

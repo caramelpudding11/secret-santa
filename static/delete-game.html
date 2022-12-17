@@ -24,14 +24,22 @@
 
     <script type="module">
         import cfa from "https://esm.sh/cf-alert@0.2.1";
+        import cf from "https://esm.sh/campfire.js@2.3.1";
         const games = await fetch('/adminned-games').then(res => res.json());
         const gameSelect = document.querySelector('select[name="name"]');
         for (const game of games) {
-            const option = document.createElement('option');
-            option.value = game;
-            option.innerText = game;
-            gameSelect.appendChild(option);
+            cf.insert(cf.nu('option', {
+                c: game
+            }), { atEndOf: gameSelect });
         }
+
+        if (window.location.search) {
+            const params = new URLSearchParams(window.location.search);
+            if (games.includes(params.get('game'))) {
+                gameSelect.value = params.get('game');
+            }
+        }
+
         const form = document.querySelector('form');
         form.addEventListener('submit', async e => {
             e.preventDefault();
