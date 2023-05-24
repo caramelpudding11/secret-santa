@@ -1,18 +1,14 @@
-body {
-    height: 100vh;
-    margin: 0;
-}
-
 :root {
-    --particle-color: white;
+    --particle-color: rgba(255, 255, 255, 0.4);
     /* The particle color. */
     --particle-count: 200;
+
     /* Number of particles. Recommended to set this via media-queries. */
     --particle-radius-min: 5;
     /* Minimum radius of particles. */
     --particle-radius-max: 10;
     /* Maximum radius of particles. */
-    --bubbles-bg: #10105f;
+    --bubbles-bg: #05053c;
     /* Set the background color. */
     --max-alpha: 75;
     /* a percentage, 0-100 */
